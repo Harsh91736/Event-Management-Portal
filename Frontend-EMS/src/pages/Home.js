@@ -40,17 +40,21 @@ const Home = () => {
       <nav className="navbar">
         <div className="container">
           <Link to="/" className="navbar-brand">
-            Event Management System
+            🎓 Event Management System
           </Link>
           <ul className="navbar-nav">
             <li>
-              <Link to="/login" className="btn btn-primary">
-                Login
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <button className="btn-primary">
+                  Login
+                </button>
               </Link>
             </li>
             <li>
-              <Link to="/register" className="btn btn-secondary">
-                Register as Student
+              <Link to="/register" style={{ textDecoration: 'none' }}>
+                <button className="btn-success">
+                  Register as Student
+                </button>
               </Link>
             </li>
           </ul>
@@ -61,23 +65,55 @@ const Home = () => {
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
-        padding: '60px 0',
-        textAlign: 'center'
+        padding: '80px 0',
+        textAlign: 'center',
+        boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
       }}>
         <div className="container">
-          <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>Welcome to Event Management System</h1>
-          <p style={{ fontSize: '20px', marginBottom: '30px' }}>
+          <h1 style={{
+            fontSize: '3.5rem',
+            marginBottom: '1.5rem',
+            fontWeight: '800',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            Welcome to Event Management System
+          </h1>
+          <p style={{
+            fontSize: '1.5rem',
+            marginBottom: '2.5rem',
+            opacity: '0.95',
+            maxWidth: '700px',
+            margin: '0 auto 2.5rem'
+          }}>
             Discover exciting events and vibrant clubs at our campus
           </p>
-          <Link to="/login" className="btn btn-primary" style={{ fontSize: '18px', padding: '15px 30px' }}>
-            Get Started
+          <Link to="/login" style={{ textDecoration: 'none' }}>
+            <button style={{
+              fontSize: '1.25rem',
+              padding: '1rem 3rem',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '2px solid white',
+              backdropFilter: 'blur(10px)'
+            }}>
+              Get Started →
+            </button>
           </Link>
         </div>
       </div>
 
       {/* Upcoming Events Section */}
-      <div className="container" style={{ marginTop: '40px' }}>
-        <h2 style={{ marginBottom: '30px', fontSize: '32px' }}>Upcoming Events</h2>
+      <div className="container" style={{ marginTop: '60px' }}>
+        <h2 style={{
+          marginBottom: '40px',
+          fontSize: '2.5rem',
+          fontWeight: '800',
+          background: 'var(--primary-gradient)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          🎉 Upcoming Events
+        </h2>
         {events.length === 0 ? (
           <div className="card">
             <p style={{ textAlign: 'center', fontSize: '18px' }}>No upcoming events at the moment. Check back soon!</p>
@@ -127,8 +163,10 @@ const Home = () => {
                     <strong>Club:</strong> {event.club.name}
                   </p>
                 )}
-                <Link to="/login" className="btn btn-primary" style={{ marginTop: '15px', width: '100%' }}>
-                  Login to Register
+                <Link to="/login" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                  <button style={{ marginTop: '15px', width: '100%' }}>
+                    Login to Register →
+                  </button>
                 </Link>
               </div>
             ))}
@@ -137,8 +175,18 @@ const Home = () => {
       </div>
 
       {/* Clubs Section */}
-      <div className="container" style={{ marginBottom: '50px' }}>
-        <h2 style={{ marginBottom: '30px', fontSize: '32px' }}>Our Clubs</h2>
+      <div className="container" style={{ marginBottom: '80px' }}>
+        <h2 style={{
+          marginBottom: '40px',
+          fontSize: '2.5rem',
+          fontWeight: '800',
+          background: 'var(--secondary-gradient)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          🎭 Our Clubs
+        </h2>
         {clubs.length === 0 ? (
           <div className="card">
             <p style={{ textAlign: 'center', fontSize: '18px' }}>No clubs available yet.</p>

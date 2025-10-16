@@ -15,23 +15,25 @@ const Navbar = ({ role, navItems }) => {
     <nav className="navbar">
       <div className="container">
         <Link to={`/${role}`} className="navbar-brand">
-          Event Management System
+          🎓 Event Management System
         </Link>
         <ul className="navbar-nav">
-          {navItems.map((item, index) => (
+          {navItems && navItems.map((item, index) => (
             <li key={index}>
               <Link to={item.path} className="nav-link">
                 {item.label}
               </Link>
             </li>
           ))}
+          {user && (
+            <li>
+              <span className="nav-link" style={{ cursor: 'default', opacity: 0.9 }}>
+                👤 {user.name}
+              </span>
+            </li>
+          )}
           <li>
-            <span className="nav-link" style={{ cursor: 'default' }}>
-              Welcome, {user?.name}
-            </span>
-          </li>
-          <li>
-            <button onClick={handleLogout} className="btn btn-secondary">
+            <button onClick={handleLogout}>
               Logout
             </button>
           </li>

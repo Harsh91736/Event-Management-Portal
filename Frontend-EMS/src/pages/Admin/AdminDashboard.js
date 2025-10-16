@@ -1,15 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import { useToast } from '../../components/Toast';
 import api from '../../utils/api';
 
 const AdminHome = () => {
   return (
-    <div className="container">
-      <h1>Admin Dashboard</h1>
-      <div className="card">
-        <h3>Welcome to Event Management System</h3>
-        <p>Use the navigation above to manage faculties and view system information.</p>
+    <div className="dashboard">
+      <h2>Admin Dashboard</h2>
+      <div className="section">
+        <h3>Welcome to Event Management System 🎯</h3>
+        <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: 'var(--text-light)', marginBottom: 'var(--space-xl)' }}>
+          Manage the entire event management system. Register faculty members and oversee all activities.
+        </p>
+        <div className="card-grid">
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>👥</h3>
+            <h4>Faculty Management</h4>
+            <p>Register and manage faculty members</p>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>📊</h3>
+            <h4>System Overview</h4>
+            <p>Monitor all system activities</p>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>⚙️</h3>
+            <h4>Settings</h4>
+            <p>Configure system preferences</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -23,8 +43,7 @@ const RegisterFaculty = () => {
     password: '',
     photo: ''
   });
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,22 +51,20 @@ const RegisterFaculty = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    setError('');
 
     try {
       const response = await api.post('/admin/register-faculty', formData);
-      setMessage(response.data.message);
+      showSuccess(response.data.message || 'Faculty registered successfully! ✅');
       setFormData({ name: '', email: '', contactNo: '', password: '', photo: '' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to register faculty');
+      showError(err.response?.data?.message || 'Failed to register faculty');
     }
   };
 
   return (
-    <div className="container">
-      <h2>Register Faculty</h2>
-      <div className="card">
+    <div className="dashboard">
+      <h2>Register Faculty 👥</h2>
+      <div className="section">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Name</label>
@@ -57,6 +74,7 @@ const RegisterFaculty = () => {
               value={formData.name}
               onChange={handleChange}
               required
+              placeholder="Enter faculty name"
             />
           </div>
           <div className="form-group">
@@ -67,6 +85,7 @@ const RegisterFaculty = () => {
               value={formData.email}
               onChange={handleChange}
               required
+              placeholder="faculty@example.com"
             />
           </div>
           <div className="form-group">
@@ -77,6 +96,7 @@ const RegisterFaculty = () => {
               value={formData.contactNo}
               onChange={handleChange}
               required
+              placeholder="+1234567890"
             />
           </div>
           <div className="form-group">
@@ -87,6 +107,7 @@ const RegisterFaculty = () => {
               value={formData.password}
               onChange={handleChange}
               required
+              placeholder="Create a secure password"
             />
           </div>
           <div className="form-group">
@@ -96,11 +117,12 @@ const RegisterFaculty = () => {
               name="photo"
               value={formData.photo}
               onChange={handleChange}
+              placeholder="https://example.com/photo.jpg"
             />
           </div>
-          {message && <div className="success">{message}</div>}
-          {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary">Register Faculty</button>
+          <button type="submit" style={{ width: '100%' }}>
+            Register Faculty →
+          </button>
         </form>
       </div>
     </div>
@@ -110,6 +132,7 @@ const RegisterFaculty = () => {
 const FacultyList = () => {
   const [faculties, setFaculties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchFaculties();
@@ -127,53 +150,68 @@ const FacultyList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this faculty?')) {
+    if (window.confirm('Are you sure you want to delete this faculty? This action cannot be undone.')) {
       try {
         await api.delete(`/admin/faculty/${id}`);
+        showSuccess('Faculty deleted successfully');
         fetchFaculties();
       } catch (error) {
+        showError('Failed to delete faculty');
         console.error('Error deleting faculty:', error);
       }
     }
   };
 
-  if (loading) return <div className="container">Loading...</div>;
+  if (loading) return (
+    <div className="dashboard">
+      <div className="section">
+        <h2>Loading faculties...</h2>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container">
-      <h2>Faculty List</h2>
-      <div className="card">
+    <div className="dashboard">
+      <h2>Faculty List 👥</h2>
+      <div className="section">
         {faculties.length === 0 ? (
-          <p>No faculties registered yet.</p>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+            <h3 style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>👥</h3>
+            <p style={{ fontSize: '1.2rem', color: 'var(--text-light)' }}>
+              No faculties registered yet.
+            </p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Contact No</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {faculties.map((faculty) => (
-                <tr key={faculty._id}>
-                  <td>{faculty.name}</td>
-                  <td>{faculty.email}</td>
-                  <td>{faculty.contactNo}</td>
-                  <td>
-                    <button
-                      onClick={() => handleDelete(faculty._id)}
-                      className="btn btn-danger"
-                      style={{ fontSize: '12px', padding: '5px 10px' }}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Contact Number</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {faculties.map((faculty) => (
+                  <tr key={faculty._id}>
+                    <td><strong>{faculty.name}</strong></td>
+                    <td>📧 {faculty.email}</td>
+                    <td>📞 {faculty.contactNo}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(faculty._id)}
+                        className="btn-danger"
+                        style={{ fontSize: '0.85rem', padding: 'var(--space-sm) var(--space-md)' }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
