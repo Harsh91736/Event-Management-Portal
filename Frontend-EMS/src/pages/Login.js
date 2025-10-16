@@ -1,24 +1,25 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login } = useContext(AuthContext);
+  const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     const result = await login(email, password);
 
     if (result.success) {
+      showSuccess('Login successful! Redirecting...');
       // Navigate based on role
       switch (result.user.role) {
         case 'admin':
@@ -37,16 +38,16 @@ const Login = () => {
           navigate('/');
       }
     } else {
-      setError(result.message);
+      showError(result.message || 'Login failed. Please check your credentials.');
     }
 
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="card" style={{ maxWidth: '400px', width: '100%' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Login</h2>
+    <div className="login-page">
+      <div className="login-container">
+        <h2>Welcome Back</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
@@ -55,6 +56,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="Enter your email"
             />
           </div>
           <div className="form-group">
@@ -64,15 +66,15 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder="Enter your password"
             />
           </div>
-          {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+          <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        <p style={{ textAlign: 'center', marginTop: '15px' }}>
-          Don't have an account? <Link to="/register">Register as Student</Link>
+        <p style={{ textAlign: 'center', marginTop: 'var(--space-lg)', color: 'var(--text-light)' }}>
+          Don't have an account? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Register as Student</Link>
         </p>
       </div>
     </div>

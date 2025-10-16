@@ -1,15 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import { useToast } from '../../components/Toast';
 import api from '../../utils/api';
 
 const FacultyHome = () => {
   return (
-    <div className="container">
-      <h1>Faculty Dashboard</h1>
-      <div className="card">
-        <h3>Welcome Faculty</h3>
-        <p>Manage clubs, assign coordinators, and verify events.</p>
+    <div className="dashboard">
+      <h2>Faculty Dashboard</h2>
+      <div className="section">
+        <h3>Welcome, Faculty! 👨‍🏫</h3>
+        <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: 'var(--text-light)', marginBottom: 'var(--space-xl)' }}>
+          Manage clubs, assign coordinators, and verify event requests. Your role is crucial in organizing campus activities!
+        </p>
+        <div className="card-grid">
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>🎭</h3>
+            <h4>Club Management</h4>
+            <p>Create and manage student clubs</p>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>👥</h3>
+            <h4>Coordinators</h4>
+            <p>Assign coordinators to clubs</p>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>✅</h3>
+            <h4>Event Verification</h4>
+            <p>Approve or reject event requests</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -21,8 +41,7 @@ const CreateClub = () => {
     description: '',
     image: ''
   });
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,22 +49,20 @@ const CreateClub = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    setError('');
 
     try {
       const response = await api.post('/faculty/create-club', formData);
-      setMessage(response.data.message);
+      showSuccess(response.data.message || 'Club created successfully! 🎭');
       setFormData({ name: '', description: '', image: '' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create club');
+      showError(err.response?.data?.message || 'Failed to create club');
     }
   };
 
   return (
-    <div className="container">
-      <h2>Create Club</h2>
-      <div className="card">
+    <div className="dashboard">
+      <h2>Create Club 🎭</h2>
+      <div className="section">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Club Name</label>
@@ -55,6 +72,7 @@ const CreateClub = () => {
               value={formData.name}
               onChange={handleChange}
               required
+              placeholder="Enter club name"
             />
           </div>
           <div className="form-group">
@@ -64,6 +82,7 @@ const CreateClub = () => {
               value={formData.description}
               onChange={handleChange}
               required
+              placeholder="Describe the club's purpose and activities"
             />
           </div>
           <div className="form-group">
@@ -73,11 +92,12 @@ const CreateClub = () => {
               name="image"
               value={formData.image}
               onChange={handleChange}
+              placeholder="https://example.com/club-image.jpg"
             />
           </div>
-          {message && <div className="success">{message}</div>}
-          {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary">Create Club</button>
+          <button type="submit" style={{ width: '100%' }}>
+            Create Club →
+          </button>
         </form>
       </div>
     </div>
@@ -90,6 +110,7 @@ const ManageClubs = () => {
   const [selectedClub, setSelectedClub] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [loading, setLoading] = useState(true);
+  const { showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     fetchClubs();
@@ -118,7 +139,7 @@ const ManageClubs = () => {
 
   const handleAssignCoordinator = async () => {
     if (!selectedClub || !selectedStudent) {
-      alert('Please select both club and student');
+      showWarning('Please select both club and student');
       return;
     }
 
@@ -127,22 +148,28 @@ const ManageClubs = () => {
         clubId: selectedClub,
         studentId: selectedStudent
       });
-      alert('Coordinator assigned successfully');
+      showSuccess('Coordinator assigned successfully! 👥');
       fetchClubs();
       setSelectedClub('');
       setSelectedStudent('');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to assign coordinator');
+      showError(error.response?.data?.message || 'Failed to assign coordinator');
     }
   };
 
-  if (loading) return <div className="container">Loading...</div>;
+  if (loading) return (
+    <div className="dashboard">
+      <div className="section">
+        <h2>Loading clubs...</h2>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container">
-      <h2>Manage Clubs</h2>
+    <div className="dashboard">
+      <h2>Manage Clubs 🎭</h2>
 
-      <div className="card">
+      <div className="section">
         <h3>Assign Coordinator</h3>
         <div className="form-group">
           <label>Select Club</label>
@@ -166,34 +193,51 @@ const ManageClubs = () => {
             ))}
           </select>
         </div>
-        <button onClick={handleAssignCoordinator} className="btn btn-primary">
-          Assign Coordinator
+        <button onClick={handleAssignCoordinator} style={{ width: '100%' }}>
+          Assign Coordinator →
         </button>
       </div>
 
-      <div className="card">
+      <div className="section" style={{ marginTop: 'var(--space-2xl)' }}>
         <h3>My Clubs</h3>
         {clubs.length === 0 ? (
-          <p>No clubs created yet.</p>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+            <h3 style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🎭</h3>
+            <p style={{ fontSize: '1.2rem', color: 'var(--text-light)' }}>
+              No clubs created yet.
+            </p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Coordinator</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clubs.map((club) => (
-                <tr key={club._id}>
-                  <td>{club.name}</td>
-                  <td>{club.description}</td>
-                  <td>{club.coordinator?.name || 'Not assigned'}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Club Name</th>
+                  <th>Description</th>
+                  <th>Coordinator</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {clubs.map((club) => (
+                  <tr key={club._id}>
+                    <td><strong>{club.name}</strong></td>
+                    <td>{club.description}</td>
+                    <td>
+                      {club.coordinator ? (
+                        <span className="badge badge-success">
+                          👤 {club.coordinator.name}
+                        </span>
+                      ) : (
+                        <span className="badge badge-pending">
+                          Not assigned
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -204,6 +248,7 @@ const VerifyEvents = () => {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [approvedEvents, setApprovedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchEvents();
@@ -227,99 +272,127 @@ const VerifyEvents = () => {
   const handleApprove = async (eventId) => {
     try {
       await api.put(`/faculty/verify-event/${eventId}`, { status: 'approved' });
-      alert('Event approved successfully');
+      showSuccess('Event approved successfully! ✅');
       fetchEvents();
     } catch (error) {
-      alert('Failed to approve event');
+      showError('Failed to approve event');
     }
   };
 
   const handleReject = async (eventId) => {
     try {
       await api.put(`/faculty/verify-event/${eventId}`, { status: 'rejected' });
-      alert('Event rejected');
+      showSuccess('Event rejected');
       fetchEvents();
     } catch (error) {
-      alert('Failed to reject event');
+      showError('Failed to reject event');
     }
   };
 
-  if (loading) return <div className="container">Loading...</div>;
+  if (loading) return (
+    <div className="dashboard">
+      <div className="section">
+        <h2>Loading events...</h2>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container">
-      <h2>Verify Events</h2>
+    <div className="dashboard">
+      <h2>Verify Events ✅</h2>
 
-      <div className="card">
+      <div className="section">
         <h3>Pending Events</h3>
         {pendingEvents.length === 0 ? (
-          <p>No pending events.</p>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+            <h3 style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>✅</h3>
+            <p style={{ fontSize: '1.2rem', color: 'var(--text-light)' }}>
+              No pending events to review.
+            </p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Venue</th>
-                <th>Created By</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingEvents.map((event) => (
-                <tr key={event._id}>
-                  <td>{event.name}</td>
-                  <td>{new Date(event.date).toLocaleDateString()}</td>
-                  <td>{event.venue}</td>
-                  <td>{event.createdBy?.name}</td>
-                  <td>
-                    <button
-                      onClick={() => handleApprove(event._id)}
-                      className="btn btn-primary"
-                      style={{ fontSize: '12px', padding: '5px 10px', marginRight: '5px' }}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleReject(event._id)}
-                      className="btn btn-danger"
-                      style={{ fontSize: '12px', padding: '5px 10px' }}
-                    >
-                      Reject
-                    </button>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Date</th>
+                  <th>Venue</th>
+                  <th>Created By</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pendingEvents.map((event) => (
+                  <tr key={event._id}>
+                    <td><strong>{event.name}</strong></td>
+                    <td>📅 {new Date(event.date).toLocaleDateString()}</td>
+                    <td>📍 {event.venue}</td>
+                    <td>👤 {event.createdBy?.name}</td>
+                    <td>
+                      <button
+                        onClick={() => handleApprove(event._id)}
+                        className="btn-success"
+                        style={{ fontSize: '0.85rem', padding: 'var(--space-sm) var(--space-md)', marginRight: 'var(--space-sm)' }}
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(event._id)}
+                        className="btn-danger"
+                        style={{ fontSize: '0.85rem', padding: 'var(--space-sm) var(--space-md)' }}
+                      >
+                        ✗ Reject
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      <div className="card">
-        <h3>Approved Events</h3>
+      <div className="section">
+        <h3 style={{
+          fontSize: '1.5rem',
+          background: 'linear-gradient(135deg, var(--success-gradient-start), var(--success-gradient-end))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: 'var(--space-lg)'
+        }}>
+          ✅ Approved Events
+        </h3>
         {approvedEvents.length === 0 ? (
-          <p>No approved events.</p>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xxl)' }}>
+            <p style={{ fontSize: '3rem', margin: '0 0 var(--space-md) 0' }}>📋</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>No approved events yet.</p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Venue</th>
-                <th>Created By</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approvedEvents.map((event) => (
-                <tr key={event._id}>
-                  <td>{event.name}</td>
-                  <td>{new Date(event.date).toLocaleDateString()}</td>
-                  <td>{event.venue}</td>
-                  <td>{event.createdBy?.name}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Date</th>
+                  <th>Venue</th>
+                  <th>Created By</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {approvedEvents.map((event) => (
+                  <tr key={event._id}>
+                    <td><strong>{event.name}</strong></td>
+                    <td>📅 {new Date(event.date).toLocaleDateString()}</td>
+                    <td>📍 {event.venue}</td>
+                    <td>👤 {event.createdBy?.name}</td>
+                    <td><span className="badge-success">✓ Approved</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

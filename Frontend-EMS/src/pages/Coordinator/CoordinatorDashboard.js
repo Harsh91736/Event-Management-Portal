@@ -1,21 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import { useToast } from '../../components/Toast';
 import api from '../../utils/api';
 
 const CoordinatorHome = () => {
   return (
-    <div className="container">
-      <h1>Coordinator Dashboard</h1>
-      <div className="card">
-        <h3>Welcome Coordinator</h3>
-        <p>Create and manage events for your club.</p>
+    <div className="dashboard">
+      <div className="section">
+        <h1 style={{
+          fontSize: '2.5rem',
+          background: 'linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: 'var(--space-md)'
+        }}>
+          🎯 Coordinator Dashboard
+        </h1>
+        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xxl)' }}>
+          Create and manage exciting events for your club!
+        </p>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 'var(--space-lg)',
+          marginTop: 'var(--space-xl)'
+        }}>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🎪</div>
+            <h3 style={{ marginBottom: 'var(--space-sm)', color: 'var(--primary-gradient-start)' }}>Create Events</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>Organize amazing events and engage students</p>
+          </div>
+
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>📋</div>
+            <h3 style={{ marginBottom: 'var(--space-sm)', color: 'var(--secondary-gradient-start)' }}>Manage Events</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>Track and monitor all your events</p>
+          </div>
+
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>✅</div>
+            <h3 style={{ marginBottom: 'var(--space-sm)', color: 'var(--success-gradient-start)' }}>Approval Status</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>View event approval status</p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 const CreateEvent = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -26,8 +62,6 @@ const CreateEvent = () => {
     contactEmail: '',
     image: ''
   });
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,12 +69,16 @@ const CreateEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    setError('');
+
+    // Validation
+    if (!formData.name || !formData.description || !formData.date || !formData.time || !formData.venue) {
+      showWarning('Please fill in all required fields');
+      return;
+    }
 
     try {
       const response = await api.post('/coordinator/create-event', formData);
-      setMessage(response.data.message);
+      showSuccess(response.data.message || 'Event created successfully! Waiting for faculty approval.');
       setFormData({
         name: '',
         description: '',
@@ -52,14 +90,22 @@ const CreateEvent = () => {
         image: ''
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create event');
+      showError(err.response?.data?.message || 'Failed to create event');
     }
   };
 
   return (
-    <div className="container">
-      <h2>Create Event</h2>
-      <div className="card">
+    <div className="dashboard">
+      <div className="section">
+        <h2 style={{
+          fontSize: '2rem',
+          background: 'linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: 'var(--space-xl)'
+        }}>
+          🎪 Create New Event
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Event Name</label>
@@ -68,6 +114,7 @@ const CreateEvent = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Enter event name"
               required
             />
           </div>
@@ -77,6 +124,7 @@ const CreateEvent = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
+              placeholder="Describe your event..."
               required
             />
           </div>
@@ -107,6 +155,7 @@ const CreateEvent = () => {
               name="venue"
               value={formData.venue}
               onChange={handleChange}
+              placeholder="Enter venue name"
               required
             />
           </div>
@@ -117,6 +166,7 @@ const CreateEvent = () => {
               name="address"
               value={formData.address}
               onChange={handleChange}
+              placeholder="Full address of the venue"
               required
             />
           </div>
@@ -127,6 +177,7 @@ const CreateEvent = () => {
               name="contactEmail"
               value={formData.contactEmail}
               onChange={handleChange}
+              placeholder="contact@example.com"
               required
             />
           </div>
@@ -137,11 +188,12 @@ const CreateEvent = () => {
               name="image"
               value={formData.image}
               onChange={handleChange}
+              placeholder="https://example.com/event-image.jpg"
             />
           </div>
-          {message && <div className="success">{message}</div>}
-          {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary">Create Event</button>
+          <button type="submit" className="btn-primary" style={{ width: '100%', fontSize: '1.1rem' }}>
+            🎪 Create Event →
+          </button>
         </form>
       </div>
     </div>
@@ -167,48 +219,68 @@ const MyEvents = () => {
     }
   };
 
-  if (loading) return <div className="container">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <div className="section">
+          <p style={{ textAlign: 'center', fontSize: '1.2rem', color: 'var(--text-secondary)' }}>⏳ Loading events...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container">
-      <h2>My Events</h2>
-      <div className="card">
+    <div className="dashboard">
+      <div className="section">
+        <h2 style={{
+          fontSize: '2rem',
+          background: 'linear-gradient(135deg, var(--secondary-gradient-start), var(--secondary-gradient-end))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: 'var(--space-xl)'
+        }}>
+          📋 My Events
+        </h2>
         {events.length === 0 ? (
-          <p>No events created yet.</p>
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xxl)' }}>
+            <p style={{ fontSize: '3rem', margin: '0 0 var(--space-md) 0' }}>🎪</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>No events created yet. Start creating amazing events!</p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Venue</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((event) => (
-                <tr key={event._id}>
-                  <td>{event.name}</td>
-                  <td>{new Date(event.date).toLocaleDateString()}</td>
-                  <td>{event.time}</td>
-                  <td>{event.venue}</td>
-                  <td>
-                    <span style={{
-                      padding: '5px 10px',
-                      borderRadius: '5px',
-                      backgroundColor: event.status === 'approved' ? '#28a745' :
-                        event.status === 'rejected' ? '#dc3545' : '#ffc107',
-                      color: 'white',
-                      fontSize: '12px'
-                    }}>
-                      {event.status}
-                    </span>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Venue</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {events.map((event) => (
+                  <tr key={event._id}>
+                    <td><strong>{event.name}</strong></td>
+                    <td>📅 {new Date(event.date).toLocaleDateString()}</td>
+                    <td>🕐 {event.time}</td>
+                    <td>📍 {event.venue}</td>
+                    <td>
+                      {event.status === 'approved' && (
+                        <span className="badge-success">✓ Approved</span>
+                      )}
+                      {event.status === 'rejected' && (
+                        <span className="badge-danger">✗ Rejected</span>
+                      )}
+                      {event.status === 'pending' && (
+                        <span className="badge-pending">⏳ Pending</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
