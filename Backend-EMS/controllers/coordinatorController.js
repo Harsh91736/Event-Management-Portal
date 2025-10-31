@@ -104,3 +104,54 @@ exports.updateEvent = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Get participants for a specific event
+exports.getEventParticipants = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    console.log('Fetching participants for event:', eventId);
+    console.log('Coordinator ID:', req.user._id);
+
+    // Find the event and verify it belongs to this coordinator
+    const event = await Event.findOne({
+      _id: eventId,
+      createdBy: req.user._id
+    })
+      .populate('club', 'name')
+      .populate({
+        path: 'registeredStudents',
+        select: 'name email studentId department photo contactNo'
+      });
+
+    console.log('Event found:', event ? 'Yes' : 'No');
+
+    if (!event) {
+      console.log('Event not found or unauthorized');
+      return res.status(404).json({ message: 'Event not found or unauthorized' });
+    }
+
+    console.log('Registered students count:', event.registeredStudents.length);
+
+    // Return event details with participants
+    res.json({
+      event: {
+        _id: event._id,
+        name: event.name,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        venue: event.venue,
+        address: event.address,
+        contactEmail: event.contactEmail,
+        club: event.club,
+        status: event.status
+      },
+      participants: event.registeredStudents,
+      totalParticipants: event.registeredStudents.length
+    });
+  } catch (error) {
+    console.error('Error in getEventParticipants:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

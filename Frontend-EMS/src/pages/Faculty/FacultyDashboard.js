@@ -380,6 +380,22 @@ const VerifyEvents = () => {
     }
   };
 
+  const handleDelete = async (eventId, eventName) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the event "${eventName}"?\n\nThis action cannot be undone and will remove all associated data including:\n- Event details\n- Registered participants\n- Reviews and feedback`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/faculty/event/${eventId}`);
+      showSuccess('Event deleted successfully! 🗑️');
+      fetchEvents();
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to delete event');
+    }
+  };
+
   if (loading) return (
     <div className="dashboard">
       <div className="section">
@@ -469,6 +485,7 @@ const VerifyEvents = () => {
                   <th>Venue</th>
                   <th>Created By</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -479,6 +496,33 @@ const VerifyEvents = () => {
                     <td>📍 {event.venue}</td>
                     <td>👤 {event.createdBy?.name}</td>
                     <td><span className="badge-success">✓ Approved</span></td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(event._id, event.name)}
+                        style={{
+                          fontSize: '0.85rem',
+                          padding: 'var(--space-sm) var(--space-md)',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #e53e3e, #c53030)',
+                          color: 'white',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 2px 4px rgba(229, 62, 62, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 4px 8px rgba(229, 62, 62, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 2px 4px rgba(229, 62, 62, 0.3)';
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
