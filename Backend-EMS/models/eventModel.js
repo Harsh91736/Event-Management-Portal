@@ -63,6 +63,26 @@ const eventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  attendance: [{
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['present', 'absent'],
+      required: true
+    },
+    markedAt: {
+      type: Date,
+      default: Date.now
+    },
+    markedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
   reviews: [{
     student: {
       type: mongoose.Schema.Types.ObjectId,

@@ -8,8 +8,11 @@ const ViewParticipants = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [eventDetails, setEventDetails] = useState(null);
+  const [attendance, setAttendance] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [markingAttendance, setMarkingAttendance] = useState({});
   const { showSuccess, showError } = useToast();
 
   const fetchMyEvents = async () => {
@@ -38,6 +41,8 @@ const ViewParticipants = () => {
       console.log('Response received:', response.data);
       setParticipants(response.data.participants || []);
       setEventDetails(response.data.event);
+      setAttendance(response.data.attendance || []);
+      setFeedbacks(response.data.feedbacks || []);
       setSelectedEvent(eventId);
       setLoadingParticipants(false);
     } catch (error) {
@@ -58,6 +63,44 @@ const ViewParticipants = () => {
     }
   };
 
+  const markAttendance = async (studentId, status) => {
+    setMarkingAttendance(prev => ({ ...prev, [studentId]: true }));
+    try {
+      const response = await api.post(`/coordinator/event/${selectedEvent}/attendance`, {
+        studentId,
+        status
+      });
+
+      // Update local attendance state
+      setAttendance(response.data.attendance || []);
+      showSuccess(`Attendance marked as ${status}`);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to mark attendance';
+      showError(errorMessage);
+    } finally {
+      setMarkingAttendance(prev => ({ ...prev, [studentId]: false }));
+    }
+  };
+
+  const getAttendanceStatus = (studentId) => {
+    const record = attendance.find(att => att.student === studentId);
+    return record ? record.status : null;
+  };
+
+  const getFeedback = (studentId) => {
+    return feedbacks.find(fb => fb.student._id === studentId);
+  };
+
+  const isEventStarted = () => {
+    if (!eventDetails) return false;
+
+    const eventDate = new Date(eventDetails.date);
+    const [hours, minutes] = eventDetails.time.split(':');
+    eventDate.setHours(parseInt(hours), parseInt(minutes), 0);
+
+    return new Date() >= eventDate;
+  };
+
   const exportToExcel = () => {
     if (!participants || participants.length === 0) {
       showError('No participants to export');
@@ -66,26 +109,43 @@ const ViewParticipants = () => {
 
     try {
       // Prepare data for Excel
-      const excelData = participants.map((participant, index) => ({
-        'S.No': index + 1,
-        'Student ID': participant.studentId || 'N/A',
-        'Name': participant.name,
-        'Email': participant.email,
-        'Department': participant.department || 'N/A',
-        'Contact No': participant.contactNo || 'N/A'
-      }));
+      const excelData = participants.map((participant, index) => {
+        const attendanceRecord = attendance.find(att => att.student === participant._id);
+        const attendanceStatus = attendanceRecord ?
+          (attendanceRecord.status === 'present' ? 'Present' : 'Absent') :
+          'Not Marked';
+
+        const feedbackRecord = feedbacks.find(fb => fb.student._id === participant._id);
+        const feedbackRating = feedbackRecord ? `${feedbackRecord.rating}/5 stars` : 'Not Submitted';
+        const feedbackComment = feedbackRecord ? feedbackRecord.comment : 'N/A';
+
+        return {
+          'S.No': index + 1,
+          'Student ID': participant.studentId || 'N/A',
+          'Name': participant.name,
+          'Email': participant.email,
+          'Department': participant.department || 'N/A',
+          'Contact No': participant.contactNo || 'N/A',
+          'Feedback Rating': feedbackRating,
+          'Feedback Comment': feedbackComment,
+          'Attendance': attendanceStatus
+        };
+      });
 
       // Add event details at the top
       const eventInfo = [
-        { 'S.No': 'Event Details', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Event Name', 'Student ID': eventDetails.name, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Date', 'Student ID': new Date(eventDetails.date).toLocaleDateString(), 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Time', 'Student ID': eventDetails.time, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Venue', 'Student ID': eventDetails.venue, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Club', 'Student ID': eventDetails.club?.name || 'N/A', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Total Participants', 'Student ID': participants.length, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': '', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' },
-        { 'S.No': 'Participant List', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '' }
+        { 'S.No': 'Event Details', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Event Name', 'Student ID': eventDetails.name, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Date', 'Student ID': new Date(eventDetails.date).toLocaleDateString(), 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Time', 'Student ID': eventDetails.time, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Venue', 'Student ID': eventDetails.venue, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Club', 'Student ID': eventDetails.club?.name || 'N/A', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Total Participants', 'Student ID': participants.length, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Total Feedbacks', 'Student ID': feedbacks.length, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Total Present', 'Student ID': attendance.filter(a => a.status === 'present').length, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Total Absent', 'Student ID': attendance.filter(a => a.status === 'absent').length, 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': '', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' },
+        { 'S.No': 'Participant List', 'Student ID': '', 'Name': '', 'Email': '', 'Department': '', 'Contact No': '', 'Feedback Rating': '', 'Feedback Comment': '', 'Attendance': '' }
       ];
 
       const finalData = [...eventInfo, ...excelData];
@@ -101,18 +161,21 @@ const ViewParticipants = () => {
         { wch: 25 }, // Name
         { wch: 30 }, // Email
         { wch: 20 }, // Department
-        { wch: 15 }  // Contact No
+        { wch: 15 }, // Contact No
+        { wch: 18 }, // Feedback Rating
+        { wch: 40 }, // Feedback Comment
+        { wch: 15 }  // Attendance
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, 'Participants');
 
       // Generate filename with event name and date
-      const filename = `${eventDetails.name.replace(/[^a-z0-9]/gi, '_')}_Participants_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `${eventDetails.name.replace(/[^a-z0-9]/gi, '_')}_Attendance_${new Date().toISOString().split('T')[0]}.xlsx`;
 
       // Save file
       XLSX.writeFile(wb, filename);
 
-      showSuccess('Excel file downloaded successfully! 📊');
+      showSuccess('Excel file with attendance downloaded successfully! 📊');
     } catch (error) {
       console.error('Export error:', error);
       showError('Failed to export Excel file');
@@ -292,6 +355,51 @@ const ViewParticipants = () => {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
+              {/* Attendance Info Banner */}
+              {isEventStarted() ? (
+                <div style={{
+                  marginBottom: 'var(--space-lg)',
+                  padding: 'var(--space-md)',
+                  background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.1), rgba(56, 161, 105, 0.1))',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(72, 187, 120, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>✅</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: '600', color: '#2d3748' }}>
+                      Attendance Marking Available
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#718096' }}>
+                      Event has started. You can now mark student attendance.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  marginBottom: 'var(--space-lg)',
+                  padding: 'var(--space-md)',
+                  background: 'linear-gradient(135deg, rgba(237, 137, 54, 0.1), rgba(246, 173, 85, 0.1))',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(237, 137, 54, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>⏰</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: '600', color: '#2d3748' }}>
+                      Attendance Not Available Yet
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#718096' }}>
+                      Attendance marking will be available after the event starts at {eventDetails.time}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f7fafc' }}>
@@ -349,53 +457,222 @@ const ViewParticipants = () => {
                     }}>
                       Contact
                     </th>
+                    <th style={{
+                      padding: 'var(--space-md)',
+                      textAlign: 'center',
+                      borderBottom: '2px solid #e2e8f0',
+                      color: '#2d3748',
+                      fontWeight: '600',
+                      minWidth: '200px'
+                    }}>
+                      Feedback
+                    </th>
+                    {isEventStarted() && (
+                      <th style={{
+                        padding: 'var(--space-md)',
+                        textAlign: 'center',
+                        borderBottom: '2px solid #e2e8f0',
+                        color: '#2d3748',
+                        fontWeight: '600'
+                      }}>
+                        Attendance
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((participant, index) => (
-                    <tr
-                      key={participant._id}
-                      style={{
-                        borderBottom: '1px solid #e2e8f0',
-                        transition: 'background-color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f7fafc'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
-                        {index + 1}
-                      </td>
-                      <td style={{ padding: 'var(--space-md)', color: '#4a5568', fontWeight: '600' }}>
-                        {participant.studentId || 'N/A'}
-                      </td>
-                      <td style={{ padding: 'var(--space-md)', color: '#2d3748', fontWeight: '600' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {participant.photo && (
-                            <img
-                              src={participant.photo}
-                              alt={participant.name}
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                objectFit: 'cover'
-                              }}
-                            />
+                  {participants.map((participant, index) => {
+                    const attendanceStatus = getAttendanceStatus(participant._id);
+                    const isMarking = markingAttendance[participant._id];
+                    const feedback = getFeedback(participant._id);
+
+                    return (
+                      <tr
+                        key={participant._id}
+                        style={{
+                          borderBottom: '1px solid #e2e8f0',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f7fafc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
+                          {index + 1}
+                        </td>
+                        <td style={{ padding: 'var(--space-md)', color: '#4a5568', fontWeight: '600' }}>
+                          {participant.studentId || 'N/A'}
+                        </td>
+                        <td style={{ padding: 'var(--space-md)', color: '#2d3748', fontWeight: '600' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {participant.photo && (
+                              <img
+                                src={participant.photo}
+                                alt={participant.name}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                            )}
+                            {participant.name}
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
+                          {participant.email}
+                        </td>
+                        <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
+                          {participant.department || 'N/A'}
+                        </td>
+                        <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
+                          {participant.contactNo || 'N/A'}
+                        </td>
+                        <td style={{ padding: 'var(--space-md)' }}>
+                          {feedback ? (
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              padding: '8px',
+                              background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.08), rgba(56, 161, 105, 0.08))',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(72, 187, 120, 0.2)'
+                            }}>
+                              {/* Star Rating */}
+                              <div style={{
+                                display: 'flex',
+                                gap: '4px',
+                                justifyContent: 'center',
+                                fontSize: '1.1rem'
+                              }}>
+                                {[...Array(5)].map((_, i) => (
+                                  <span
+                                    key={i}
+                                    style={{
+                                      color: i < feedback.rating ? '#48bb78' : '#e2e8f0',
+                                      textShadow: i < feedback.rating ? '0 2px 4px rgba(72, 187, 120, 0.3)' : 'none'
+                                    }}
+                                  >
+                                    {i < feedback.rating ? '⭐' : '☆'}
+                                  </span>
+                                ))}
+                              </div>
+                              {/* Rating Number */}
+                              <div style={{
+                                textAlign: 'center',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                color: '#2f855a'
+                              }}>
+                                {feedback.rating}/5
+                              </div>
+                              {/* Comment Preview */}
+                              <div style={{
+                                fontSize: '0.8rem',
+                                color: '#4a5568',
+                                fontStyle: 'italic',
+                                textAlign: 'center',
+                                maxWidth: '200px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }} title={feedback.comment}>
+                                "{feedback.comment}"
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{
+                              textAlign: 'center',
+                              padding: '8px',
+                              color: '#a0aec0',
+                              fontSize: '0.85rem',
+                              fontStyle: 'italic'
+                            }}>
+                              No feedback yet
+                            </div>
                           )}
-                          {participant.name}
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
-                        {participant.email}
-                      </td>
-                      <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
-                        {participant.department || 'N/A'}
-                      </td>
-                      <td style={{ padding: 'var(--space-md)', color: '#4a5568' }}>
-                        {participant.contactNo || 'N/A'}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        {isEventStarted() && (
+                          <td style={{ padding: 'var(--space-md)' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                              {attendanceStatus ? (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  background: attendanceStatus === 'present'
+                                    ? 'linear-gradient(135deg, rgba(72, 187, 120, 0.15), rgba(56, 161, 105, 0.15))'
+                                    : 'linear-gradient(135deg, rgba(245, 101, 101, 0.15), rgba(229, 62, 62, 0.15))',
+                                  border: `1px solid ${attendanceStatus === 'present' ? '#48bb78' : '#f56565'}`,
+                                  fontWeight: '600',
+                                  fontSize: '0.85rem'
+                                }}>
+                                  <span>{attendanceStatus === 'present' ? '✅' : '❌'}</span>
+                                  <span style={{ color: attendanceStatus === 'present' ? '#2f855a' : '#c53030' }}>
+                                    {attendanceStatus === 'present' ? 'Present' : 'Absent'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => markAttendance(participant._id, 'present')}
+                                    disabled={isMarking}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      border: 'none',
+                                      background: 'linear-gradient(135deg, #48bb78, #38a169)',
+                                      color: 'white',
+                                      cursor: isMarking ? 'not-allowed' : 'pointer',
+                                      fontWeight: '600',
+                                      fontSize: '0.85rem',
+                                      transition: 'all 0.2s ease',
+                                      opacity: isMarking ? 0.6 : 1
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (!isMarking) e.target.style.transform = 'scale(1.05)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (!isMarking) e.target.style.transform = 'scale(1)';
+                                    }}
+                                  >
+                                    ✅ Present
+                                  </button>
+                                  <button
+                                    onClick={() => markAttendance(participant._id, 'absent')}
+                                    disabled={isMarking}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      border: 'none',
+                                      background: 'linear-gradient(135deg, #f56565, #e53e3e)',
+                                      color: 'white',
+                                      cursor: isMarking ? 'not-allowed' : 'pointer',
+                                      fontWeight: '600',
+                                      fontSize: '0.85rem',
+                                      transition: 'all 0.2s ease',
+                                      opacity: isMarking ? 0.6 : 1
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (!isMarking) e.target.style.transform = 'scale(1.05)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (!isMarking) e.target.style.transform = 'scale(1)';
+                                    }}
+                                  >
+                                    ❌ Absent
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
